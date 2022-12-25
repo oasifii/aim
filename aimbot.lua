@@ -11,27 +11,9 @@ local Heartbeat = RunService.Heartbeat
 local LocalPlayer = Players.LocalPlayer
 local CurrentCamera = Workspace.CurrentCamera
 local Mouse = LocalPlayer:GetMouse()
-
--- // Optimisation Vars (ugly)
-local Drawingnew = Drawing.new
-local Color3fromRGB = Color3.fromRGB
-local Vector2new = Vector2.new
-local GetGuiInset = GuiService.GetGuiInset
-local Randomnew = Random.new
-local mathfloor = math.floor
-local CharacterAdded = LocalPlayer.CharacterAdded
-local CharacterAddedWait = CharacterAdded.Wait
-local WorldToViewportPoint = CurrentCamera.WorldToViewportPoint
-local RaycastParamsnew = RaycastParams.new
-local EnumRaycastFilterTypeBlacklist = Enum.RaycastFilterType.Blacklist
 local Raycast = Workspace.Raycast
 local GetPlayers = Players.GetPlayers
-local Instancenew = Instance.new
-local IsDescendantOf = Instancenew("Part").IsDescendantOf
-local FindFirstChildWhichIsA = Instancenew("Part").FindFirstChildWhichIsA
-local FindFirstChild = Instancenew("Part").FindFirstChild
-local tableremove = table.remove
-local tableinsert = table.insert
+
 
 -- // Silent Aim Vars
 getgenv().Aiming = {
@@ -40,7 +22,7 @@ getgenv().Aiming = {
     ShowFOV = false,
     FOV = 119,
     FOVSides = 100,
-    FOVColour = Color3fromRGB(255,0,0),
+    FOVColour = Color3.fromRGB(255,0,0),
 
     VisibleCheck = true,
     
@@ -68,7 +50,7 @@ getgenv().Aiming = {
 local Aiming = getgenv().Aiming
 
 -- // Create circle
-local circle = Drawingnew("Circle")
+local circle = Drawing.new("Circle")
 circle.Transparency = 1
 circle.Thickness = 1
 circle.Color = Aiming.FOVColour
@@ -85,7 +67,7 @@ function Aiming.UpdateFOV()
     -- // Set Circle Properties
     circle.Visible = Aiming.ShowFOV
     circle.Radius = (Aiming.FOV * 3)
-    circle.Position = Vector2new(Mouse.X, Mouse.Y + GetGuiInset(GuiService).Y)
+    circle.Position = Vector2.new(Mouse.X, Mouse.Y + GuiService.GetGuiInset(GuiService).Y)
     circle.NumSides = Aiming.FOVSides
     circle.Color = Aiming.FOVColour
 
@@ -96,10 +78,10 @@ end
 -- // Custom Functions
 local CalcChance = function(percentage)
     -- // Floor the percentage
-    percentage = mathfloor(percentage)
+    percentage = math.floor(percentage)
 
     -- // Get the chance
-    local chance = mathfloor(Randomnew().NextNumber(Randomnew(), 0, 1) * 100) / 100
+    local chance = math.floor(Random.new().NextNumber(Random.new(), 0, 1) * 100) / 100
 
     -- // Return
     return chance <= percentage / 100
@@ -108,15 +90,15 @@ end
 -- // Customisable Checking Functions: Is a part visible
 function Aiming.IsPartVisible(Part, PartDescendant)
     -- // Vars
-    local Character = LocalPlayer.Character or CharacterAddedWait(CharacterAdded)
+    local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded.Wait(LocalPlayer.CharacterAdded)
     local Origin = CurrentCamera.CFrame.Position
-    local _, OnScreen = WorldToViewportPoint(CurrentCamera, Part.Position)
+    local _, OnScreen = CurrentCamera.WorldToViewportPoint(CurrentCamera, Part.Position)
 
     -- //
     if (OnScreen) then
         -- // Vars
-        local raycastParams = RaycastParamsnew()
-        raycastParams.FilterType = EnumRaycastFilterTypeBlacklist
+        local raycastParams = RaycastParams.new()
+        raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
         raycastParams.FilterDescendantsInstances = {Character, CurrentCamera}
 
         -- // Cast ray
@@ -126,7 +108,7 @@ function Aiming.IsPartVisible(Part, PartDescendant)
         if (Result) then
             -- // Vars
             local PartHit = Result.Instance
-            local Visible = (not PartHit or IsDescendantOf(PartHit, PartDescendant))
+            local Visible = (not PartHit or Instance.new("Part").IsDescendantOf(PartHit, PartDescendant))
 
             -- // Return
             return Visible
@@ -152,7 +134,7 @@ function Aiming.IgnorePlayer(Player)
     end
 
     -- // Blacklist player
-    tableinsert(IgnoredPlayers, Player)
+    table.insert(IgnoredPlayers, Player)
     return true
 end
 
@@ -167,7 +149,7 @@ function Aiming.UnIgnorePlayer(Player)
         -- // Make sure player matches
         if (IgnoredPlayer == Player) then
             -- // Remove from ignored
-            tableremove(IgnoredPlayers, i)
+            table.remove(IgnoredPlayers, i)
             return true
         end
     end
@@ -191,7 +173,7 @@ function Aiming.IgnoreTeam(Team, TeamColor)
     end
 
     -- // Ignore team
-    tableinsert(IgnoredTeams, {Team, TeamColor})
+    table.insert(IgnoredTeams, {Team, TeamColor})
     return true
 end
 
@@ -206,7 +188,7 @@ function Aiming.UnIgnoreTeam(Team, TeamColor)
         -- // Make sure team matches
         if (IgnoredTeam.Team == Team and IgnoredTeam.TeamColor == TeamColor) then
             -- // Remove
-            tableremove(IgnoredTeams, i)
+            table.remove(IgnoredTeams, i)
             return true
         end
     end
@@ -297,7 +279,7 @@ end
 function Aiming.CheckHealth(Player)
     -- // Get Humanoid
     local Character = Aiming.Character(Player)
-    local Humanoid = FindFirstChildWhichIsA(Character, "Humanoid")
+    local Humanoid = Instance.new("Part").FindFirstChildWhichIsA(Character, "Humanoid")
 
     -- // Get Health
     local Health = (Humanoid and Humanoid.Health or 0)
@@ -327,7 +309,7 @@ function Aiming.GetClosestTargetPartToCursor(Character)
     local function CheckTargetPart(TargetPart)
         -- // Convert string -> Instance
         if (typeof(TargetPart) == "string") then
-            TargetPart = FindFirstChild(Character, TargetPart)
+            TargetPart = Instance.new("Part").FindFirstChild(Character, TargetPart)
         end
 
         -- // Make sure we have a target
@@ -336,9 +318,9 @@ function Aiming.GetClosestTargetPartToCursor(Character)
         end
 
         -- // Get the length between Mouse and Target Part (on screen)
-        local PartPos, onScreen = WorldToViewportPoint(CurrentCamera, TargetPart.Position)
-        local GuiInset = GetGuiInset(GuiService)
-        local Magnitude = (Vector2new(PartPos.X, PartPos.Y - GuiInset.Y) - Vector2new(Mouse.X, Mouse.Y)).Magnitude
+        local PartPos, onScreen = CurrentCamera.WorldToViewportPoint(CurrentCamera, TargetPart.Position)
+        local GuiInset = GuiService.GetGuiInset(GuiService)
+        local Magnitude = (Vector2.new(PartPos.X, PartPos.Y - GuiInset.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
 
         -- //
         if (Magnitude < ShortestDistance) then
